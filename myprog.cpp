@@ -11,6 +11,7 @@
 
 // JSBSim
 #include <FGFDMExec.h>
+#include <initialization/FGInitialCondition.h>
 
 using namespace std;
 
@@ -89,33 +90,69 @@ class FDMInterface {
     public:
         // instantiate and initialize FDM
         // (constructor)
-        FDMInterface(string& aircraft_name, string& aircraft_path);
+        FDMInterface(string& aircraft_name, string& aircraft_path, string& ic_name);
     private:
         // main FDM instance
         JSBSim::FGFDMExec* fdmex;
+        JSBSim::FGInitialCondition *ic;
 };
 
-FDMInterface::FDMInterface(string& aircraft_name, string& aircraft_path) {
-    // initialize FDM
+// (constructor)
+FDMInterface::FDMInterface(string& aircraft_name, string& aircraft_path, string& ic_name) {
+    // create JSBSim instance
+    cout << "initializing FDM" << endl;
     fdmex = new JSBSim::FGFDMExec();
+    fdmex->SetRootDir("");
     fdmex->SetAircraftPath(aircraft_path);
     //fdmex->SetEnginePath("engine");
     //fdmex->SetSystemsPath("systems");
+
+    // load aircraft FDM
     fdmex->LoadModel(aircraft_name);
+    // (error is catched by JSBSim 255)
+    /*if ( ! fdmex->LoadModel(aircraft_name)) {
+        delete fdmex;
+        cerr << "could not load FDM model..." << endl;
+        exit(1);
+    }*/
+
+    // load initial conditions
+    ic = fdmex->GetIC();
+    ic->Load(ic_name);
+    // (error is catched by JSBSim 255)
+    /*if ( ! ic->Load(ic_name)) {
+        delete fdmex;
+        cerr << "could not load initial FDM conditions" << endl;
+        exit(1);
+    }*/
+
+    // run once w/o integrating
+    // --> copy to JSBSim
+    fdmex->RunIC();
+    // --> do trim here
+    // --> copy from JSBSim
 }
 
 int main() {
 
-    // SETTINGS:
+    // FDM
+
+    // Settings:
     //
     string aircraft_name = "ball";
     string aircraft_path = "aircraft";
+    // load initial conditions from file (for now)
+    string ic_name = "cannonball_init";
 
     // instantiate FDM
-    FDMInterface* fdm_interf = new FDMInterface(aircraft_name, aircraft_path);
+    FDMInterface* fdm_interf = new FDMInterface(aircraft_name, aircraft_path, ic_name);
 
     // initialize fdm
+    // --> done in the constructor
     //initialize_flight_dynamics("ball");
+
+
+    // GRAPHICS
 
 	//Creating the viewer
     osgViewer::Viewer viewer;
@@ -125,10 +162,6 @@ int main() {
 
     // create model position-attitude transformer
     osg::ref_ptr<osg::PositionAttitudeTransform> modelPAT (new osg::PositionAttitudeTransform);
-
-    // object position vector
-    // --> where is it used ?
-    //osg::Vec3f objectPosTrans = osg::Vec3f(-1,3,5);
 
     // object geode ("geometry node")
     //osg::ref_ptr<osg::Geode> objectGeode (new osg::Geode);
@@ -166,38 +199,12 @@ int main() {
     //return viewer.run();
     viewer.realize();
 
+
+    // MAIN LOOP
+
     while (!viewer.done()) {
         //modelData->updatePosition();
         viewer.frame();
     }
 
-
-    //---------(previous example)
-
-	//The geode containing our shpae
-   	//osg::ref_ptr<osg::Geode> myshapegeode (new osg::Geode);
-
-	//Our shape: a capsule, it could have been any other geometry (a box, plane, cylinder etc.)
-	//osg::ref_ptr<osg::Capsule> myCapsule (new osg::Capsule(osg::Vec3f(),1,2));
-
-	//Our shape drawable
-	//osg::ref_ptr<osg::ShapeDrawable> capsuledrawable (new osg::ShapeDrawable(myCapsule.get()));
-
-	//myshapegeode->addDrawable(capsuledrawable.get());
-
-	//root->addChild(myshapegeode.get());
-
-	//viewer.setSceneData( root.get() );
-	//viewer.setThreadingModel(osgViewer::Viewer::ThreadingModel::SingleThreaded);
-
-	//Stats Event Handler s key
-	//viewer.addEventHandler(new osgViewer::StatsHandler);
-
-	//Windows size handler
-	//viewer.addEventHandler(new osgViewer::WindowSizeHandler);
-
-	// add the state manipulator
-    //viewer.addEventHandler( new 		osgGA::StateSetManipulator(viewer.getCamera()->getOrCreateStateSet()) );
-	//The viewer.run() method starts the threads and the traversals.
-	//return (viewer.run());
 }

@@ -1,38 +1,35 @@
+// OpenSceneGraph
 #include <osg/PositionAttitudeTransform>
-
 #include <osgDB/ReadFile>
 #include <osgGA/TrackballManipulator>
-
 #include <osgViewer/Viewer>
-//#include <osg/ShapeDrawable>
 
-//#include <osgViewer/ViewerEventHandlers>
-//#include <osgGA/StateSetManipulator>
-
-// JSBSim
-#include <FGFDMExec.h>
-#include <initialization/FGInitialCondition.h>
+#include "FDMInterface.h"
 
 using namespace std;
 
 class modelData : public osg::Referenced {
     public:
-        modelData(osg::PositionAttitudeTransform* n);
+        modelData(osg::PositionAttitudeTransform* n, FDMInterface* f);
         void updateAttitude();
         void updatePosition();
     protected:
         osg::PositionAttitudeTransform* modelPATNode;
+        FDMInterface* fdmi;
         osg::Vec3d position;
         //osg::Quat attitude;
 };
 
-modelData::modelData(osg::PositionAttitudeTransform* n) {
+modelData::modelData(osg::PositionAttitudeTransform* n, FDMInterface* f) {
     modelPATNode = n;
+    fdmi = f;
     position = osg::Vec3d(0,0,0);
 }
 
 void modelData::updatePosition() {
     // --> evtl. get position from FDM here ?
+    double alt_asl = fdmi->get_alt_asl();
+    cout << "Altitude: " << alt_asl << endl;
     position = position + osg::Vec3d(0,0,0.01);
     modelPATNode->setPosition(position);
 }
@@ -53,85 +50,6 @@ class modelCallback : public osg::NodeCallback {
         traverse(node, nv);
     }
 };
-
-/*class modelData {
-
-    public:
-        modelData(osg::Vec3d* pos, osg::Vec3d* att);
-        void set_position(osg::Vec3d* pos);
-        void set_attitude(osg::Vec3d* att);
-    protected:
-        osg::Vec3d position;
-        osg::Vec3d attitude;
-
-}*/
-
-/*void update_position_attitude(modelData& md) {
-    //
-}*/
-
-/*
-int initialize_flight_dynamics(const std::string& name) {
-    JSBSim::FGFDMExec* fdmex = new JSBSim::FGFDMExec();
-    fdmex->LoadModel(name);
-    //FDMExec->DoTrim(mode);
-}*/
-
-/*int run_flight_dynamics() {
-    //copy_inputs_to_jsbsim();
-    //FDMExec->Run();
-    //copy_outputs_from_jsbsim();
-}*/
-
-// (declaration)
-class FDMInterface {
-    // interface to FDM (JSBSim)
-    // initialize and input/output interface
-    public:
-        // instantiate and initialize FDM
-        // (constructor)
-        FDMInterface(string& aircraft_name, string& aircraft_path, string& ic_name);
-    private:
-        // main FDM instance
-        JSBSim::FGFDMExec* fdmex;
-        JSBSim::FGInitialCondition *ic;
-};
-
-// (constructor)
-FDMInterface::FDMInterface(string& aircraft_name, string& aircraft_path, string& ic_name) {
-    // create JSBSim instance
-    cout << "initializing FDM" << endl;
-    fdmex = new JSBSim::FGFDMExec();
-    fdmex->SetRootDir("");
-    fdmex->SetAircraftPath(aircraft_path);
-    //fdmex->SetEnginePath("engine");
-    //fdmex->SetSystemsPath("systems");
-
-    // load aircraft FDM
-    fdmex->LoadModel(aircraft_name);
-    // (error is catched by JSBSim 255)
-    /*if ( ! fdmex->LoadModel(aircraft_name)) {
-        delete fdmex;
-        cerr << "could not load FDM model..." << endl;
-        exit(1);
-    }*/
-
-    // load initial conditions
-    ic = fdmex->GetIC();
-    ic->Load(ic_name);
-    // (error is catched by JSBSim 255)
-    /*if ( ! ic->Load(ic_name)) {
-        delete fdmex;
-        cerr << "could not load initial FDM conditions" << endl;
-        exit(1);
-    }*/
-
-    // run once w/o integrating
-    // --> copy to JSBSim
-    fdmex->RunIC();
-    // --> do trim here
-    // --> copy from JSBSim
-}
 
 int main() {
 
@@ -169,11 +87,12 @@ int main() {
     // load model from file
     osg::ref_ptr<osg::Node> model (osgDB::readNodeFile("cessna.osgt"));
     if (!model) {
+        cout << "3D model not found, leaving..." << endl;
         return 1;
     }
 
     // set up callback
-    modelData* model_data = new modelData(modelPAT);
+    modelData* model_data = new modelData(modelPAT, fdm_interf);
 
     modelPAT->setUserData(model_data);
     modelPAT->setUpdateCallback(new modelCallback);

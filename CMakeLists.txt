@@ -8,15 +8,16 @@ find_package(osgViewer)
 find_package(osgDB)
 find_package(osgGA)
 
+# include JSBSim
+# (needed for the linker to find it)
+include_directories(JSBSim/src)
+
 # build my program
-add_executable(myprog myprog.cpp)
+add_executable(myprog myprog.cpp FDMInterface.cpp FDMInterface.h)
 
 # build JSBSim
 set(LIBRARY_VERSION 1)
 add_subdirectory(JSBSim/src)
-
-# include and link JSBSim
-include_directories(JSBSim/src)
 
 target_link_libraries(myprog libJSBSim)
 

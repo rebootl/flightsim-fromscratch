@@ -2,8 +2,11 @@
 #include "FDMInterface.h"
 #include "JSBSim/src/math/FGLocation.h"
 #include "JSBSim/src/math/FGColumnVector3.h"
+#include "JSBSim/src/math/FGMatrix33.h"
+#include <cmath>
 
 using namespace std;
+//using namespace math;
 
 const double FT2M = 0.3048;
 
@@ -47,24 +50,14 @@ void FDMInterface::update() {
 
 void FDMInterface::update_from_JSBSim() {
     // position
-
     position.alt_asl = Propagate->GetAltitudeASLmeters();
     position.lon = Propagate->GetLongitude();
     position.lat = Propagate->GetLatitude();
     position.r = Propagate->GetRadius()*FT2M;
 
-    // get position in local frame starting at 90deg North on the earth surf. (0,0,earth_radius)
-    const JSBSim::FGLocation& fgloc = Propagate->GetLocation();
-    double er = Propagate->GetLocalTerrainRadius();
-    // --> leads to wrong coordinates...???
-    JSBSim::FGColumnVector3 vec_local = fgloc.LocationToLocal(JSBSim::FGColumnVector3(0,0,er));
-    position.loc_X = vec_local(1)*FT2M;
-    position.loc_Y = vec_local(2)*FT2M;
-    position.loc_Z = vec_local(3)*FT2M;
     position.X = fgloc.Entry(1);
     position.Y = fgloc.Entry(2);
     position.Z = fgloc.Entry(3);
-    //position.ecef_X = fgloc.Entry(1);
 
     // attitude
 

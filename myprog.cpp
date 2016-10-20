@@ -45,28 +45,21 @@ void modelData::updatePosition() {
     double lat = fdmi->position.lat;
     double lon = fdmi->position.lon;
     double r = fdmi->position.r;
-    double loc_x = fdmi->position.loc_X;
-    double loc_y = fdmi->position.loc_Y;
-    double loc_z = fdmi->position.loc_Z;
-    double x = fdmi->position.X;
-    double y = fdmi->position.Y;
-    double z = fdmi->position.Z;
+    double X = fdmi->position.X;
+    double Y = fdmi->position.Y;
+    double Z = fdmi->position.Z;
 
     // v.1/2 ==> hard to see a difference atm... using v.2)
 
     //cout << "Altitude: " << alt_asl << endl;
-    cout << "lon: " << lon << endl;
-    cout << "lat: " << lat << endl;
+    //cout << "lon: " << lon << endl;
+    //cout << "lat: " << lat << endl;
     //cout << "Radius: " << r << endl;
-    cout << "local x: " << loc_x << endl;
-    cout << "local y: " << loc_y << endl;
-    cout << "local z: " << loc_z << endl;
-    cout << "x: " << x << endl;
-    cout << "y: " << y << endl;
-    cout << "z: " << z << endl;
+    //cout << "x: " << x << endl;
+    //cout << "y: " << y << endl;
+    //cout << "z: " << z << endl;
 
-    //position = position + osg::Vec3d(0,0,0.01);
-    position = osg::Vec3d(loc_x, loc_y, loc_z);
+    position = osg::Vec3d(X, Y, Z);
     modelPATNode->setPosition(position);
 }
 

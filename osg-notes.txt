@@ -1,0 +1,6 @@
+# osg library path
+# (only needed when not installed system-wide)
+
+# osg example data
+export OSG_FILE_PATH=/home/cem/Scripts/flightsim/OpenSceneGraph-Data:/home/cem/Scripts/flightsim/OpenSceneGraph-Data/Images
+

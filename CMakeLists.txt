@@ -13,7 +13,9 @@ find_package(osgGA)
 include_directories(JSBSim/src)
 
 # build my program
-add_executable(myprog myprog.cpp FDMInterface.cpp FDMInterface.h)
+add_executable( myprog myprog.cpp
+                FDMInterface.cpp FDMInterface.h
+                Model.cpp Model.h )
 
 # build JSBSim
 set(LIBRARY_VERSION 1)

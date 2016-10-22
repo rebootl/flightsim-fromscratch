@@ -3,10 +3,9 @@
 #include "JSBSim/src/math/FGLocation.h"
 #include "JSBSim/src/math/FGColumnVector3.h"
 #include "JSBSim/src/math/FGMatrix33.h"
-#include <cmath>
+//#include <cmath>
 
 using namespace std;
-//using namespace math;
 
 const double FT2M = 0.3048;
 
@@ -54,10 +53,12 @@ void FDMInterface::update_from_JSBSim() {
     position.lon = Propagate->GetLongitude();
     position.lat = Propagate->GetLatitude();
     position.r = Propagate->GetRadius()*FT2M;
+    position.er = Propagate->GetLocalTerrainRadius()*FT2M;
 
-    position.X = fgloc.Entry(1);
-    position.Y = fgloc.Entry(2);
-    position.Z = fgloc.Entry(3);
+    const JSBSim::FGLocation& fgloc = Propagate->GetLocation();
+    position.X = fgloc.Entry(1)*FT2M;
+    position.Y = fgloc.Entry(2)*FT2M;
+    position.Z = fgloc.Entry(3)*FT2M;
 
     // attitude
 

@@ -1,90 +1,24 @@
 #include <iostream>
+
 // OpenSceneGraph
 #include <osg/PositionAttitudeTransform>
-#include <osgDB/ReadFile>
-#include <osgGA/TrackballManipulator>
-#include <osgViewer/Viewer>
+#include <osg/ShapeDrawable>
 
+#include <osgViewer/Viewer>
+#include <osgGA/TrackballManipulator>
+#include <osgDB/ReadFile>
+
+// project
 #include "FDMInterface.h"
+#include "Model.h"
 
 using namespace std;
-
-struct pos_data {
-    double alt_asl;
-    double lon;
-    double lat;
-};
-
-class modelData : public osg::Referenced {
-    public:
-        modelData(osg::PositionAttitudeTransform* n, FDMInterface* f);
-        void updateAttitude();
-        void updatePosition();
-    protected:
-        osg::PositionAttitudeTransform* modelPATNode;
-        FDMInterface* fdmi;
-        osg::Vec3d position;
-        //osg::Quat attitude;
-};
-
-modelData::modelData(osg::PositionAttitudeTransform* n, FDMInterface* f) {
-    modelPATNode = n;
-    fdmi = f;
-    position = osg::Vec3d(0,0,0);
-}
-
-void modelData::updatePosition() {
-    // get position from interface
-
-    // v.1) get alt_asl using getter, returns Prop.->GetAlt...
-    //double alt_asl = fdmi->get_alt_asl();
-
-    // v.2) get alt_asl from interface using position struct,
-    //      Prop.->GetAlt has to be done in separate call copy_from_JSBSim
-    double alt_asl = fdmi->position.alt_asl;
-    double lat = fdmi->position.lat;
-    double lon = fdmi->position.lon;
-    double r = fdmi->position.r;
-    double X = fdmi->position.X;
-    double Y = fdmi->position.Y;
-    double Z = fdmi->position.Z;
-
-    // v.1/2 ==> hard to see a difference atm... using v.2)
-
-    //cout << "Altitude: " << alt_asl << endl;
-    //cout << "lon: " << lon << endl;
-    //cout << "lat: " << lat << endl;
-    //cout << "Radius: " << r << endl;
-    //cout << "x: " << x << endl;
-    //cout << "y: " << y << endl;
-    //cout << "z: " << z << endl;
-
-    position = osg::Vec3d(X, Y, Z);
-    modelPATNode->setPosition(position);
-}
-
-void modelData::updateAttitude() {
-    //...
-}
-
-class modelCallback : public osg::NodeCallback {
-    public:
-        virtual void operator()(osg::Node* node, osg::NodeVisitor* nv) {
-            osg::ref_ptr<modelData> md =
-                dynamic_cast<modelData*> (node->getUserData());
-            if (md) {
-                md->updateAttitude();
-                md->updatePosition();
-        }
-        traverse(node, nv);
-    }
-};
 
 int main() {
 
     // FDM
 
-    // Settings:
+    // Settings
     //
     string aircraft_name = "ball";
     string aircraft_path = "aircraft";
@@ -94,21 +28,34 @@ int main() {
     // instantiate FDM
     FDMInterface* fdm_interf = new FDMInterface(aircraft_name, aircraft_path, ic_name);
 
+    // get earth radius for position
+    //double er = fdm_interf->position.er;
+
     // initialize fdm
     // --> done in the constructor
     //initialize_flight_dynamics("ball");
 
 
-    // GRAPHICS
+    // TERRAIN
 
-	//Creating the viewer
-    osgViewer::Viewer viewer;
+    // create landmark at north-pole
 
-	//Creating the root node
-	osg::ref_ptr<osg::Group> root (new osg::Group);
+    // north pole coordinates
+    //osg::Vec3d npc = osg::Vec3d(0,0,6378137);
+    osg::Vec3d np_vec = osg::Vec3d(0, 0, 6378137);
 
-    // create model position-attitude transformer
-    osg::ref_ptr<osg::PositionAttitudeTransform> modelPAT (new osg::PositionAttitudeTransform);
+    osg::Geode* terrain1 = new osg::Geode();
+
+    // ==> creating the capsule at the north-pole directly creates a corrupted model
+    //     for some reason, evtl. some sort of out-of-range problem
+    terrain1->addDrawable(new osg::ShapeDrawable(new osg::Capsule(osg::Vec3(0,0,0), 0.5f, 1.f)));
+    osg::ref_ptr<osg::PositionAttitudeTransform> terrain1_pat (new osg::PositionAttitudeTransform);
+    terrain1_pat->addChild(terrain1);
+    terrain1_pat->setPosition(np_vec);
+    // --> give it a nice color !!
+
+
+    // MODEL (aircraft)
 
     // object geode ("geometry node")
     //osg::ref_ptr<osg::Geode> objectGeode (new osg::Geode);
@@ -120,21 +67,36 @@ int main() {
         return 1;
     }
 
-    // set up callback
-    modelData* model_data = new modelData(modelPAT, fdm_interf);
+    // create model position-attitude transformer
+    osg::ref_ptr<osg::PositionAttitudeTransform> model_pat (new osg::PositionAttitudeTransform);
 
-    modelPAT->setUserData(model_data);
-    modelPAT->setUpdateCallback(new modelCallback);
+    // add the object geode as a child of the object PAT
+    model_pat->addChild(model.get());
+
+    // set up callback
+    modelData* model_data = new modelData(model_pat, fdm_interf);
+    model_pat->setUserData(model_data);
+    model_pat->setUpdateCallback(new modelCallback);
+
+
+    // ROOT SCENE GRAPH
 
     // set up scene graph
     //
-    // root --> modelPAT --> model
+    // root --> model_pat --> model
     //
 
-    // add the object geode as a child of the object PAT
-    modelPAT->addChild(model.get());
+	// creating the root node
+	osg::ref_ptr<osg::Group> root (new osg::Group);
 
-    root->addChild(modelPAT.get());
+    root->addChild(model_pat.get());
+    root->addChild(terrain1_pat.get());
+
+
+    // VIEWER
+
+	//Creating the viewer
+    osgViewer::Viewer viewer;
 
     // set scene to render and run
     viewer.setSceneData(root.get());
@@ -142,6 +104,14 @@ int main() {
     // attach a trackball manipulator to all user control of the view
     // (needed when loop is used below)
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
+    viewer.getCameraManipulator()->setHomePosition( np_vec + osg::Vec3d(0,-10,2),  // eye
+                                                    np_vec,                        // center
+                                                    osg::Vec3d(0,0,1)          // up
+                                                    );
+
+    //viewer.getCameraManipulator()->setCenter( np_vec );
+
+    //viewer.home();
 
     // instead of returning, use loop now
     //return viewer.run();

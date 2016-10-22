@@ -27,6 +27,7 @@ class FDMInterface {
             double lon;     // longitude [rad]
             double lat;     // latitude [rad]
             double r;       // distance to earth center [m]
+            double er;       // earth (terrain) radius [m]
             double X;
             double Y;
             double Z;

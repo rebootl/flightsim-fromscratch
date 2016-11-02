@@ -5,10 +5,10 @@
 #include "JSBSim/src/FGFDMExec.h"
 #include "JSBSim/src/initialization/FGInitialCondition.h"
 
+// interface to FDM (JSBSim)
+// initialization and input/output interface
 // (declaration)
 class FDMInterface {
-    // interface to FDM (JSBSim)
-    // initialization and input/output interface
 
     public:
         // instantiate and initialize FDM

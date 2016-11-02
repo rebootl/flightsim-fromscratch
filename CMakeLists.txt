@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.6.2)
 
 project(myprog)
 
-# include osg (OpenSceneGraph)
+# find SFML
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules" ${CMAKE_MODULE_PATH})
+find_package(SFML 2 REQUIRED system window graphics network audio)
+
+find_package(OpenGL REQUIRED)
+
+# find osg (OpenSceneGraph)
 find_package(osg)
 find_package(osgViewer)
 find_package(osgDB)
@@ -21,7 +27,15 @@ add_executable( myprog myprog.cpp
 set(LIBRARY_VERSION 1)
 add_subdirectory(JSBSim/src)
 
+# link JSBSim
 target_link_libraries(myprog libJSBSim)
+
+# include and link SFML
+include_directories(${SFML_INCLUDE_DIR})
+target_link_libraries(myprog ${SFML_LIBRARIES})
+
+include_directories(${OPENGL_INCLUDE_DIRS})
+target_link_libraries(myprog ${OPENGL_LIBRARIES})
 
 # include and link OSG by macro (needed)
 

@@ -36,7 +36,7 @@ void modelData::updatePosition() {
     //cout << "lon: " << lon << endl;
     //cout << "lat: " << lat << endl;
     //cout << "Radius: " << r << endl;
-    cout << "Terrain radius: " << er << endl;
+    //cout << "Terrain radius: " << er << endl;
     //cout << "X: " << X << endl;
     //cout << "Y: " << Y << endl;
     //cout << "Z: " << Z << endl;
@@ -48,3 +48,4 @@ void modelData::updatePosition() {
 void modelData::updateAttitude() {
     //...
 }
+

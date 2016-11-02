@@ -1,20 +1,46 @@
 #include <iostream>
 
+// SFML
+#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 // OpenSceneGraph
 #include <osg/PositionAttitudeTransform>
 #include <osg/ShapeDrawable>
 
 #include <osgViewer/Viewer>
 #include <osgGA/TrackballManipulator>
+//#include <osgGA/OrbitManipulator>
 #include <osgDB/ReadFile>
 
 // project
 #include "FDMInterface.h"
 #include "Model.h"
+//#include "Input.h"
 
 using namespace std;
 
 int main() {
+
+    // SFML Window
+
+    // (leads to rendering prob., repl. by below)
+    /*sf::Window window;
+    window.create(sf::VideoMode(800, 600), "My window");*/
+
+    sf::Window window(sf::VideoMode(800, 600),
+                      "My Window",
+                      sf::Style::Default,
+                      sf::ContextSettings(24));
+
+    window.setVerticalSyncEnabled(true);
+
+    sf::Vector2u size = window.getSize();
+
 
     // FDM
 
@@ -42,7 +68,8 @@ int main() {
 
     // north pole coordinates
     //osg::Vec3d npc = osg::Vec3d(0,0,6378137);
-    osg::Vec3d np_vec = osg::Vec3d(0, 0, 6378137);
+    //osg::Vec3d np_vec = osg::Vec3d(0, 0, 6378137);
+    osg::Vec3d np_vec = osg::Vec3d(0,0,    0);
 
     osg::Geode* terrain1 = new osg::Geode();
 
@@ -98,35 +125,80 @@ int main() {
 	//Creating the viewer
     osgViewer::Viewer viewer;
 
+    osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> gw = viewer.setUpViewerAsEmbeddedInWindow(0, 0, size.x, size.y);
+
     // set scene to render and run
     viewer.setSceneData(root.get());
 
     // attach a trackball manipulator to all user control of the view
     // (needed when loop is used below)
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator);
-    viewer.getCameraManipulator()->setHomePosition( np_vec + osg::Vec3d(0,-10,2),  // eye
+    //osgGA::OrbitManipulator* om = new osgGA::OrbitManipulator;
+    osgGA::TrackballManipulator* om = new osgGA::TrackballManipulator;
+    viewer.setCameraManipulator(om);
+    viewer.getCameraManipulator()->setHomePosition( np_vec + osg::Vec3d(0,-10,3),  // eye
                                                     np_vec,                        // center
                                                     osg::Vec3d(0,0,1)          // up
                                                     );
-
+    viewer.home();
+    //om->setMinimumDistance(5, false);
+    //viewer.getCameraManipulator()->setMinimumDistance(5, false);
     //viewer.getCameraManipulator()->setCenter( np_vec );
 
-    //viewer.home();
+    // input
+    //myKeyboardEventHandler* myFirstEventHandler = new myKeyboardEventHandler();
+    //viewer.addEventHandler(myFirstEventHandler);
 
     // instead of returning, use loop now
     //return viewer.run();
     viewer.realize();
 
 
-    // MAIN LOOP
+    // GAME LOOP
 
-    while (!viewer.done()) {
+    while (window.isOpen()) {
+
+        // --> read input
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            switch(event.type) {
+            case sf::Event::Closed:
+                window.close();
+                break;
+            case sf::Event::KeyPressed:
+                if (event.key.code == sf::Keyboard::Escape) {
+                    window.close();
+                }
+                break;
+            case sf::Event::Resized:
+                gw->resized(0, 0, event.size.width, event.size.height);
+                break;
+            }
+        }
+
         // update FDM
+        // --> copy input to JSBSim
         fdm_interf->update();
         fdm_interf->update_from_JSBSim();
 
-        // update viewer
-        viewer.frame();
-    }
+        // update camera
+        //om->setCenter( np_vec + osg::Vec3d(0,0,-2) );
+        //om->setDistance(2);
 
+        window.setActive();
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // OSG Viewer step
+        //
+        // this is updating the model via
+        // - modelCallback
+        //     md (modelData)
+        //       model_pat
+        //       fdmi
+        //       -> updateAttitude
+        //       -> updatePosition
+        viewer.frame();
+
+        window.display();
+
+    }
+    return 0;
 }

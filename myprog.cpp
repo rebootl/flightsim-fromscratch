@@ -2,11 +2,6 @@
 
 // SFML
 #include <SFML/Window.hpp>
-#include <SFML/Graphics.hpp>
-#include <SFML/OpenGL.hpp>
-
-#include <GL/gl.h>
-#include <GL/glu.h>
 
 // OpenSceneGraph
 #include <osg/PositionAttitudeTransform>
@@ -20,7 +15,7 @@
 // project
 #include "FDMInterface.h"
 #include "Model.h"
-//#include "Input.h"
+#include "InputInterface.h"
 
 using namespace std;
 
@@ -41,6 +36,8 @@ int main() {
 
     sf::Vector2u size = window.getSize();
 
+    // Input
+    InputInterface* ii = new InputInterface(window);
 
     // FDM
 
@@ -127,6 +124,8 @@ int main() {
 
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> gw = viewer.setUpViewerAsEmbeddedInWindow(0, 0, size.x, size.y);
 
+    ii->set_graphicswindow(gw);
+
     // set scene to render and run
     viewer.setSceneData(root.get());
 
@@ -160,19 +159,7 @@ int main() {
         // --> read input
         sf::Event event;
         while (window.pollEvent(event)) {
-            switch(event.type) {
-            case sf::Event::Closed:
-                window.close();
-                break;
-            case sf::Event::KeyPressed:
-                if (event.key.code == sf::Keyboard::Escape) {
-                    window.close();
-                }
-                break;
-            case sf::Event::Resized:
-                gw->resized(0, 0, event.size.width, event.size.height);
-                break;
-            }
+            ii->process_event(event);
         }
 
         // update FDM

@@ -21,7 +21,8 @@ include_directories(JSBSim/src)
 # build my program
 add_executable( myprog myprog.cpp
                 FDMInterface.cpp FDMInterface.h
-                Model.cpp Model.h )
+                Model.cpp Model.h
+                InputInterface.cpp InputInterface.h )
 
 # build JSBSim
 set(LIBRARY_VERSION 1)

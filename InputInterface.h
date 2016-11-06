@@ -18,9 +18,22 @@ class InputInterface {
 
         void process_event(sf::Event& event);
 
+        //bool cam_reorient_req;
+
     protected:
         sf::Window& window;
         osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> gw;
+
+        struct {
+            int pos_x;
+            int pos_y;
+            int dx;
+            int dy;
+        } m;
+        bool lmb_pressed = false;
+        bool rmb_pressed = false;
+        bool mmb_pressed = false;
+
 };
 
 #endif

@@ -6,6 +6,8 @@
 #include "Model.h"
 #include "FDMInterface.h"
 
+using namespace std;
+
 // constructor
 modelData::modelData(osg::PositionAttitudeTransform* n, FDMInterface* f) {
     model_pat = n;
